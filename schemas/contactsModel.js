@@ -1,6 +1,11 @@
-import mongoose from "mongoose";
+import { Schema, model } from "mongoose";
 
-const Schema = mongoose.Schema;
+import { userFilter } from "../controllers/contactsControllers.js";
+
+export const queryProjection = "-createdAt -updatedAt -owner";
+export const filters = "name,email,phone,favorite";
+
+// const Schema = mongoose.Schema;
 
 const contactSchema = new Schema(
   {
@@ -18,10 +23,47 @@ const contactSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: "user",
+      select: false,
+    },
   },
   { versionKey: false, timestamps: true }
 );
 
-const Contact = mongoose.model("contact", contactSchema);
+contactSchema.virtual("id").get(function () {
+  return this._id.toHexString();
+});
+
+contactSchema.set("toJSON", {
+  virtuals: true,
+  transform: function (doc, ret) {
+    delete ret._id;
+
+    queryProjection.split(" ").forEach((field) => {
+      if (field.length > 0 && field[0] === "-") {
+        delete ret[field.slice(1)];
+      }
+    });
+  },
+});
+
+// add query middleware
+contactSchema.pre(/^find/, function (next) {
+  if (userFilter.id) {
+    this.find({ owner: userFilter.id });
+  }
+  next();
+});
+
+contactSchema.pre(/^count/, function (next) {
+  if (userFilter.id) {
+    this.find({ owner: userFilter.id });
+  }
+  next();
+});
+
+const Contact = model("contact", contactSchema);
 
 export default Contact;
