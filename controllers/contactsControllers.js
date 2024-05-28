@@ -21,7 +21,7 @@ const getAll = async (req, res, next) => {
     limit,
   };
 
-  const filter = {};
+  const filter = { owner: req.user._id };
   filters.split(",").forEach((field) => {
     let queryField = req.query[field];
 
@@ -33,7 +33,6 @@ const getAll = async (req, res, next) => {
   });
 
   const total = await contactsService.count(filter);
-
   const contacts = await contactsService.getList(filter, pagination);
 
   const reqBody = {
@@ -48,7 +47,7 @@ const getAll = async (req, res, next) => {
 
 const getOne = async (req, res, next) => {
   const { id } = req.params;
-  const contact = await contactsService.getById(id);
+  const contact = await contactsService.getById(id, req.user._id);
 
   if (!contact) throw HttpError(404);
 
@@ -57,7 +56,7 @@ const getOne = async (req, res, next) => {
 
 const remove = async (req, res, next) => {
   const { id } = req.params;
-  const contact = await contactsService.remove(id);
+  const contact = await contactsService.remove(id, req.user._id);
 
   if (!contact) throw HttpError(404);
 
@@ -65,7 +64,6 @@ const remove = async (req, res, next) => {
 };
 
 const create = async (req, res, next) => {
-  // const { name, email, phone } = req.body;
   const contact = await contactsService.add({
     ...req.body,
     owner: req.user._id,
@@ -79,7 +77,7 @@ const update = async (req, res, next) => {
     throw HttpError(400, "Body must have at least one field");
 
   const { id } = req.params;
-  const contact = await contactsService.update(id, req.body);
+  const contact = await contactsService.update(id, req.body, req.user._id);
 
   if (!contact) throw HttpError(404);
 
@@ -88,7 +86,7 @@ const update = async (req, res, next) => {
 
 const updateStatus = async (req, res, next) => {
   const { id } = req.params;
-  const contact = await contactsService.update(id, req.body);
+  const contact = await contactsService.update(id, req.body, req.user._id);
 
   if (!contact) throw HttpError(404);
 

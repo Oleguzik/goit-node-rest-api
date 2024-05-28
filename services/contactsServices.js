@@ -9,16 +9,16 @@ const getList = (filter, pagination) =>
     .skip(pagination.skip)
     .limit(pagination.limit);
 
-const getById = (contactId) =>
-  Contact.findById(contactId).select(queryProjection);
+const getById = (contactId, owner) =>
+  Contact.findOne({ _id: contactId, owner }).select(queryProjection);
 
-const remove = (contactId) =>
-  Contact.findByIdAndDelete(contactId).select(queryProjection);
+const remove = (contactId, owner) =>
+  Contact.findOneAndDelete({ _id: contactId, owner }).select(queryProjection);
 
 const add = (contactData) => Contact.create(contactData);
 
-const update = (contactId, contactData) =>
-  Contact.findByIdAndUpdate(contactId, contactData, {
+const update = (contactId, contactData, owner) =>
+  Contact.findOneAndUpdate({ _id: contactId, owner }, contactData, {
     new: true,
   }).select(queryProjection);
 
