@@ -5,8 +5,6 @@ import { userFilter } from "../controllers/contactsControllers.js";
 export const queryProjection = "-createdAt -updatedAt -owner";
 export const filters = "name,email,phone,favorite";
 
-// const Schema = mongoose.Schema;
-
 const contactSchema = new Schema(
   {
     name: {
