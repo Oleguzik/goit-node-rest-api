@@ -1,69 +1,32 @@
-import * as fs from "node:fs/promises";
-import path from "node:path";
-import { nanoid } from "nanoid";
+import Contact from "../schemas/contactsModel.js";
+import { queryProjection } from "../schemas/contactsModel.js";
 
-const contactPath = path.resolve("db", "contacts.json");
+const count = (filter) => Contact.countDocuments(filter);
 
-async function listContacts() {
-  const contacts = await readFile();
-  return contacts;
-}
+const getList = (filter, pagination) =>
+  Contact.find(filter)
+    .select(queryProjection)
+    .skip(pagination.skip)
+    .limit(pagination.limit);
 
-async function getContactById(contactId) {
-  const contacts = await readFile();
-  const contact = contacts.find((item) => item.id === contactId);
+const getById = (contactId, owner) =>
+  Contact.findOne({ _id: contactId, owner }).select(queryProjection);
 
-  return contact ? contact : null;
-}
+const remove = (contactId, owner) =>
+  Contact.findOneAndDelete({ _id: contactId, owner }).select(queryProjection);
 
-async function removeContact(contactId) {
-  const contacts = await readFile();
-  const index = contacts.findIndex((item) => item.id === contactId);
+const add = (contactData) => Contact.create(contactData);
 
-  if (index === -1) return null;
-  const contact = contacts.splice(index, 1)[0];
-  await writeFile(contacts);
-
-  return contact;
-}
-
-async function addContact(name, email, phone) {
-  const contacts = await readFile();
-  const newContact = { id: nanoid(), name, email, phone };
-
-  contacts.push(newContact);
-  await writeFile(contacts);
-
-  return newContact;
-}
-
-async function updateContact(id, updatedData) {
-  const contacts = await readFile();
-  const index = contacts.findIndex((item) => item.id === id);
-
-  if (index === -1) return null;
-
-  const updContact = { ...contacts[index], ...updatedData };
-  contacts[index] = updContact;
-
-  await writeFile(contacts);
-
-  return updContact;
-}
-
-async function readFile() {
-  const data = await fs.readFile(contactPath, { encoding: "utf-8" });
-  return JSON.parse(data);
-}
-
-async function writeFile(contacts) {
-  return fs.writeFile(contactPath, JSON.stringify(contacts, null, 2));
-}
+const update = (contactId, contactData, owner) =>
+  Contact.findOneAndUpdate({ _id: contactId, owner }, contactData, {
+    new: true,
+  }).select(queryProjection);
 
 export default {
-  listContacts,
-  getContactById,
-  removeContact,
-  addContact,
-  updateContact,
+  count,
+  getList,
+  getById,
+  remove,
+  add,
+  update,
 };
