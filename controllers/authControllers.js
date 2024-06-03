@@ -10,8 +10,6 @@ import fs from "node:fs/promises";
 import Jimp from "jimp";
 import crypto from "node:crypto";
 
-import mailService from "../services/mail.js";
-
 const register = async (req, res, next) => {
   const { email, password } = req.body;
 
@@ -20,21 +18,17 @@ const register = async (req, res, next) => {
   if (existedUser) throw HttpError(409, "Email in use");
 
   const hashPass = await bcrypt.hash(password, 12);
+
   const avatarURL = await gravatar.url(email);
-  const verificationToken = crypto.randomUUID();
 
   const { subscription } = await usersService.add({
     email,
     password: hashPass,
     avatarURL,
-    verificationToken,
   });
 
-  await mailService.sendEmail(
-    mailService.registerTemplate({ email, verificationToken })
-  );
-
   const resBody = { user: { email, subscription } };
+
   res.status(201).json(resBody);
 };
 
@@ -114,44 +108,6 @@ const updateAvatar = async (req, res, next) => {
   res.json({ avatarURL });
 };
 
-const verifyEmail = async (req, res, next) => {
-  const { verificationToken } = req.params;
-
-  if (!verificationToken) throw HttpError(400);
-
-  const user = await usersService.get({ verificationToken });
-
-  if (!user) throw HttpError(404, "User not found");
-
-  await usersService.update({
-    id: user._id,
-    verify: true,
-    verificationToken: null,
-  });
-
-  res.json({ message: "Verification successful" });
-};
-
-const sendVerificationEmail = async (req, res, next) => {
-  const email = req.body.email;
-  const user = await usersService.get({ email });
-
-  if (!user) throw HttpError(400, "Email is not registered");
-  if (user.verify) throw HttpError(400, "Verification has already been passed");
-
-  const result = await mailService.sendEmail(
-    mailService.registerTemplate({
-      email,
-      verificationToken: user.verificationToken,
-    })
-  );
-
-  if (!result)
-    throw HttpError(500, "Something went wrong. Please, try again later");
-
-  res.json({ message: "Verification email sent" });
-};
-
 export default {
   register: ctrlWrapper(register),
   login: ctrlWrapper(login),
@@ -159,6 +115,4 @@ export default {
   current: ctrlWrapper(current),
   updateSubscription: ctrlWrapper(updateSubscription),
   updateAvatar: ctrlWrapper(updateAvatar),
-  verifyEmail: ctrlWrapper(verifyEmail),
-  sendVerificationEmail: ctrlWrapper(sendVerificationEmail),
 };
