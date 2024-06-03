@@ -17,7 +17,16 @@ const updateSubscription = Joi.object({
     .required(),
 });
 
+const verifyEmail = Joi.object({
+  email: Joi.string()
+    .trim()
+    .lowercase()
+    .pattern(userConst.emailRegExp)
+    .required(),
+});
+
 export default {
   create,
   updateSubscription,
+  verifyEmail,
 };
